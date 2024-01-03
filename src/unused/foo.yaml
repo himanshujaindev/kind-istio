@@ -1,0 +1,36 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: foo
+  namespace: pf
+  labels:
+    app: foo
+spec:
+  containers:
+  - name: foo
+    image: hashicorp/http-echo:0.2.3
+    args:
+    - "-text=foo"
+    ports:
+    - containerPort: 5678
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "64Mi"
+      requests:
+        cpu: "0.1"
+        memory: "32Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: pf
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    nodePort: 30100 # The range of valid ports is 30000-32767
+    port: 5678
+  selector:
+    app: foo

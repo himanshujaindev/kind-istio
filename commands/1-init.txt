@@ -1,0 +1,34 @@
+===== Initial Setup =====
+
+https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster
+
+brew install kind
+
+kind create cluster --name ambient --config src/kind-config.yaml
+k apply -f src/init.yaml
+
+
+https://istio.io/latest/docs/setup/getting-started/
+curl -L https://istio.io/downloadIstio | sh -
+COPY profile files to profile folder of upstream
+
+kind delete cluster --name ambient
+
+k9s --context kind-ambient
+
+================================================================================================================================
+
+Reference:
+https://www.youtube.com/watch?v=6tEy9Rp__kw
+https://github.com/shabbirsaifee92/multi-node-kind-cluster/tree/main/servicemesh/gateway
+
+
+Useful commands:
+
+kind get clusters
+kind get nodes --name ambient
+
+docker ps
+docker exec -it c04633be10fd /bin/sh
+
+Use kubectl commands ...

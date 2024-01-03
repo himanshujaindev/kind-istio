@@ -1,0 +1,73 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  image: kindest/node:v1.25.11
+  extraPortMappings: # istio ingress gateway
+  - containerPort: 30000
+    hostPort: 80
+  - containerPort: 31000
+    hostPort: 443
+  - containerPort: 32000
+    hostPort: 15021
+- role: worker
+  image: kindest/node:v1.25.11
+- role: worker
+  image: kindest/node:v1.25.11
+- role: worker
+  image: kindest/node:v1.25.11
+
+
+# localhost:80 (hostPort) -> 30000 (containerPort) -> 30000 (nodePort) -> 80 (port) http2 ingressgateway
+
+# Type:                     LoadBalancer
+# IP Family Policy:         SingleStack
+# IP Families:              IPv4
+# IP:                       10.96.86.170
+# IPs:                      10.96.86.170
+# Port:                     status-port  15021/TCP
+# TargetPort:               15021/TCP
+# NodePort:                 status-port  32064/TCP
+# Endpoints:                10.244.1.2:15021
+# Port:                     http2  80/TCP
+# TargetPort:               8080/TCP
+# NodePort:                 http2  31164/TCP
+# Endpoints:                10.244.1.2:8080
+# Port:                     https  443/TCP
+# TargetPort:               8443/TCP
+# NodePort:                 https  31814/TCP
+# Endpoints:                10.244.1.2:8443
+# Port:                     tcp  31400/TCP
+# TargetPort:               31400/TCP
+# NodePort:                 tcp  32213/TCP
+# Endpoints:                10.244.1.2:31400
+# Port:                     tls  15443/TCP
+# TargetPort:               15443/TCP
+# NodePort:                 tls  31963/TCP
+# Endpoints:                10.244.1.2:15443
+
+# Type:                     NodePort
+# IP Family Policy:         SingleStack
+# IP Families:              IPv4
+# IP:                       10.96.86.170
+# IPs:                      10.96.86.170
+# Port:                     http2  80/TCP
+# TargetPort:               8080/TCP
+# NodePort:                 http2  30000/TCP
+# Endpoints:                10.244.1.2:8080
+# Port:                     https  443/TCP
+# TargetPort:               8443/TCP
+# NodePort:                 https  31000/TCP
+# Endpoints:                10.244.1.2:8443
+# Port:                     status-port  15021/TCP
+# TargetPort:               15021/TCP
+# NodePort:                 status-port  32000/TCP
+# Endpoints:                10.244.1.2:15021
+# Port:                     tcp  31400/TCP
+# TargetPort:               31400/TCP
+# NodePort:                 tcp  32213/TCP
+# Endpoints:                10.244.1.2:31400
+# Port:                     tls  15443/TCP
+# TargetPort:               15443/TCP
+# NodePort:                 tls  31963/TCP
+# Endpoints:                10.244.1.2:15443

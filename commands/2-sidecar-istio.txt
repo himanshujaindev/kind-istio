@@ -1,0 +1,60 @@
+===== Istio Sidecar Setup =====
+
+istio-1.20.1/bin/istioctl install --set profile=himajai2-demo -d istio-1.20.1/manifests/ -y
+k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
+
+kubectl apply -f istio-1.20.1/samples/bookinfo/platform/kube/bookinfo.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
+
+Test:
+kubectl exec "$(kubectl get pod -l app=ratings -n pf -o jsonpath='{.items[0].metadata.name}')" -n pf -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+[Observe: Serves all versions [FAIL: Because no sidecar (DR is not working)]]
+
+
+kubectl apply -f istio-1.20.1/samples/sleep/sleep.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/sleep/notsleep.yaml -n pf
+
+
+
+kubectl apply -f istio-1.20.1/samples/helloworld/helloworld.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/helloworld/helloworld-gateway.yaml -n pf
+kubectl apply -f src/hellowworld-gateway-dr.yaml -n pf
+
+Test:
+exec sleep -> curl helloworld:5000/hello
+exec sleep -> curl helloworld-v1:5000/hello
+curl localhost/hello
+for i in $(seq 1 30); do curl -s localhost/hello; done
+[Observe: Serve only version v1 [FAIL: Because no sidecar (DR is not working)]]
+
+
+kubectl apply -f istio-1.20.1/samples/addons
+istioctl dashboard kiali
+
+
+kubectl get namespace -L istio-injection
+
+kubectl label namespace pf istio-injection=enabled
+
+k rollout restart deployment details-v1 helloworld-v1 helloworld-v2 notsleep productpage-v1 ratings-v1 reviews-v1 reviews-v2 reviews-v3 sleep -n pf
+
+
+Test:
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+-> Serve only version v1 [PASS: Because sidecar is present]
+
+for i in $(seq 1 30); do curl -s localhost/hello; done
+-> Serve v1 and v2 alternate [PASS: Because sidecar is present]
+
+
+================================================================================================================================
+
+
+References:
+1. https://istio.io/latest/docs/examples/bookinfo
+
+Useful Commands:
+$ istio-1.20.1/bin/istioctl analyze -A

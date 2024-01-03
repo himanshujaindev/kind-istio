@@ -1,0 +1,107 @@
+===== Ambient Mode with Ingressgateway ======
+
+istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient -d istio-1.20.1/manifests/ -y
+
+Test:
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep -o "<title>.*</title>"
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+
+kubectl label namespace pf istio.io/dataplane-mode=ambient istio-injection-
+
+k rollout restart deployment details-v1 helloworld-v1 helloworld-v2 notsleep productpage-v1 ratings-v1 reviews-v1 reviews-v2 reviews-v3 sleep -n pf
+
+
+Test:
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep -o "<title>.*</title>"
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+> #1 does not work [L7 feature]
+
+
+L4 Auth Policy:
+k apply -f src/l4-auth.yaml
+
+Test:
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep -o "<title>.*</title>"
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+> #3 SHOULD NOT WORK
+
+k delete -f src/l4-auth.yaml
+
+
+
+kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
+  { kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=v1.0.0" | kubectl apply -f -; }
+
+k apply -f src/waypoint.yaml
+Test:
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+
+
+
+L7 Auth Policy:
+k apply -f src/l7-auth.yaml
+
+
+Test:
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" -X DELETE
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+> #1 and #2 RBAC ERROR
+
+k delete -f src/l7-auth.yaml
+
+================================================================================================================================
+
+Useful Commands:
+istio-1.20.1/bin/istioctl proxy-config listener deploy/bookinfo-productpage-istio-waypoint -n pf --waypoint
+istio-1.20.1/bin/istioctl proxy-config clusters deploy/bookinfo-productpage-istio-waypoint -n pf
+istio-1.20.1/bin/istioctl proxy-config routes deploy/bookinfo-productpage-istio-waypoint -n pf
+istio-1.20.1/bin/istioctl proxy-config endpoints deploy/bookinfo-productpage-istio-waypoint -n pf
+
+References:
+https://istio.io/latest/docs/ops/ambient/getting-started/
+
+
+=============== CLEANUP ===============
+
+
+k patch services bookinfo-gateway-istio -n pf --patch-file gateway-api-patch.yaml
+
+kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/bookinfo-gateway.yaml -n pf
+
+
+kubectl delete -f istio-1.20.1/samples/helloworld/helloworld-gateway.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-gateway.yaml -n pf
+k patch services helloworld-gateway-istio -n pf --patch-file gateway-api-patch.yaml
+
+for i in $(seq 1 30); do curl localhost/hello; done
+
+
+
+kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-route.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-versions.yaml -n pf
+
+
+for i in $(seq 1 30); do curl localhost/hello; done
+
+
+
+
+
+
+
+
+
+
+
+> Observe
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+for i in $(seq 1 30); do curl -s localhost/hello; done
+
+
+

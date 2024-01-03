@@ -1,0 +1,140 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: foo-app
+  namespace: pf
+  labels:
+    app: foo
+    svc: foo-bar
+spec:
+  containers:
+  - name: foo-app
+    image: nginx:1.22.0
+    volumeMounts:
+    - name: config
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "64Mi"
+      requests:
+        cpu: "0.1"
+        memory: "32Mi"
+  volumes:
+  - name: config
+    configMap:
+      name: foo-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo-config
+  namespace: pf
+data:
+  index.html: |
+    foo
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: foo-service
+  namespace: pf
+spec:
+  selector:
+    app: foo
+  ports:
+  - port: 80
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: bar-app
+  namespace: pf
+  labels:
+    app: bar
+    svc: foo-bar
+spec:
+  containers:
+  - name: bar-app
+    image: nginx:1.22.0
+    volumeMounts:
+    - name: config
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "64Mi"
+      requests:
+        cpu: "0.1"
+        memory: "32Mi"
+  volumes:
+  - name: config
+    configMap:
+      name: bar-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bar-config
+  namespace: pf
+data:
+  index.html: |
+    bar
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: bar-service
+  namespace: pf
+spec:
+  selector:
+    app: bar
+  ports:
+  - port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: foo-bar-ingress
+  namespace: pf
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/foo(/|$)(.*)"
+        backend:
+          service:
+            name: foo-service
+            port:
+              number: 80
+      - pathType: Prefix
+        path: "/bar(/|$)(.*)"
+        backend:
+          service:
+            name: bar-service
+            port:
+              number: 80
+      - pathType: Prefix
+        path: "/foo-bar(/|$)(.*)"
+        backend:
+          service:
+            name: foo-bar-service
+            port:
+              number: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: foo-bar-service
+  namespace: pf
+spec:
+  type: LoadBalancer
+  selector:
+    svc: foo-bar
+  ports:
+  - port: 80

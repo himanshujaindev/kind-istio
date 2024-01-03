@@ -1,0 +1,69 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  meshConfig:
+    accessLogFile: /dev/stdout
+    defaultConfig:
+      proxyMetadata:
+        ISTIO_META_ENABLE_HBONE: "true" # ambient profile
+
+  components:
+    cni:
+      enabled: true # ambient profile
+    ztunnel:
+      enabled: true # ambient profile
+    egressGateways:
+    - name: istio-egressgateway
+      enabled: false
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: false
+
+    pilot:
+      k8s:
+        env:
+          - name: PILOT_TRACE_SAMPLING
+            value: "100"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi
+
+  values:
+    global:
+      proxy:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 40Mi
+
+    ztunnel:
+      variant: distroless # ambient profile
+    pilot:
+      variant: distroless # ambient profile
+      env: # ambient profile
+        # Setup more secure default that is off in 'default' only for backwards compatibility
+        VERIFY_CERTIFICATE_AT_CLIENT: "true"
+        ENABLE_AUTO_SNI: "true"
+
+        PILOT_ENABLE_HBONE: "true"
+        CA_TRUSTED_NODE_ACCOUNTS: "istio-system/ztunnel,kube-system/ztunnel"
+        PILOT_ENABLE_AMBIENT_CONTROLLERS: "true"
+        PILOT_ENABLE_ALPHA_GATEWAY_API: "true"
+      autoscaleEnabled: false
+
+    cni: # ambient profile
+      logLevel: info
+      privileged: true
+      ambient:
+        enabled: true
+
+      # Default excludes istio-system; its actually fine to redirect there since we opt-out istiod, ztunnel, and istio-cni
+      excludeNamespaces:
+      - kube-system
+
+    gateways:
+      istio-egressgateway:
+        autoscaleEnabled: false
+      istio-ingressgateway:
+        autoscaleEnabled: false
