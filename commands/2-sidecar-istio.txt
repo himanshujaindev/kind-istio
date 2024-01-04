@@ -8,22 +8,20 @@ kubectl apply -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml 
 kubectl apply -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
 kubectl apply -f istio-1.20.1/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
 
-Test:
-kubectl exec "$(kubectl get pod -l app=ratings -n pf -o jsonpath='{.items[0].metadata.name}')" -n pf -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
-for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
-[Observe: Serves all versions [FAIL: Because no sidecar (DR is not working)]]
-
-
 kubectl apply -f istio-1.20.1/samples/sleep/sleep.yaml -n pf
 kubectl apply -f istio-1.20.1/samples/sleep/notsleep.yaml -n pf
-
-
 
 kubectl apply -f istio-1.20.1/samples/helloworld/helloworld.yaml -n pf
 kubectl apply -f istio-1.20.1/samples/helloworld/helloworld-gateway.yaml -n pf
 kubectl apply -f src/hellowworld-gateway-dr.yaml -n pf
 
+kubectl apply -f istio-1.20.1/samples/addons
+
 Test:
+kubectl exec "$(kubectl get pod -l app=ratings -n pf -o jsonpath='{.items[0].metadata.name}')" -n pf -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
+for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
+[Observe: Serves all versions [FAIL: Because no sidecar (DR is not working)]]
+
 exec sleep -> curl helloworld:5000/hello
 exec sleep -> curl helloworld-v1:5000/hello
 curl localhost/hello
@@ -31,7 +29,6 @@ for i in $(seq 1 30); do curl -s localhost/hello; done
 [Observe: Serve only version v1 [FAIL: Because no sidecar (DR is not working)]]
 
 
-kubectl apply -f istio-1.20.1/samples/addons
 istioctl dashboard kiali
 
 

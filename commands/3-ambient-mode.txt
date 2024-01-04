@@ -1,6 +1,7 @@
 ===== Ambient Mode with Ingressgateway ======
 
 istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient -d istio-1.20.1/manifests/ -y
+k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
 
 Test:
 for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-"; done
@@ -9,6 +10,7 @@ kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<
 kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
 
 kubectl label namespace pf istio.io/dataplane-mode=ambient istio-injection-
+kubectl get namespace -L istio.io/dataplane-mode
 
 k rollout restart deployment details-v1 helloworld-v1 helloworld-v2 notsleep productpage-v1 ratings-v1 reviews-v1 reviews-v2 reviews-v3 sleep -n pf
 
@@ -18,7 +20,7 @@ for i in $(seq 1 30); do curl -s http://localhost/productpage | grep "reviews-";
 kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep -o "<title>.*</title>"
 kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
 kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
-> #1 does not work [L7 feature]
+> All working
 
 
 L4 Auth Policy:

@@ -9,12 +9,9 @@ istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient-gateway-api -d 
 kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/bookinfo-gateway.yaml -n pf
 k patch services bookinfo-gateway-istio -n pf --patch-file src/gateway-api-patch.yaml
 
-
 Test:
 for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://bookinfo-gateway-istio.pf/productpage" | grep "reviews-"; done
 -> Only v1 [IF DOES NOT WORK, ISSUE WITH WAYPOINT PROXY]
-
-
 
 kubectl delete -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
 kubectl delete -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
@@ -30,17 +27,13 @@ kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/route-all-v1.yaml -n 
 for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://bookinfo-gateway-istio.pf/productpage" | grep "reviews-"; done
 -> Only v1
 
+================================================================================================================================
 
 References:
 https://istio.io/latest/blog/2022/getting-started-gtwapi/
 
 Useful Commands:
 istio-1.20.1/bin/istioctl uninstall -y --purge
-
-
-
-
-
 
 
 
