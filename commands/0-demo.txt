@@ -1,0 +1,125 @@
+==================== Initial Setup ====================
+- sidecar apps
+- ingressgateway
+
+------------------------------------------------------------
+
+kind create cluster --name ambient --config src/kind-config.yaml
+k apply -f src/init.yaml
+k9s --context kind-ambient
+
+istio-1.20.1/bin/istioctl install --set profile=himajai2-demo -d istio-1.20.1/manifests/ -y
+k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
+kubectl label namespace pf istio-injection=enabled
+
+kubectl apply -f istio-1.20.1/samples/bookinfo/platform/kube/bookinfo.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
+
+kubectl apply -f istio-1.20.1/samples/sleep/sleep.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/sleep/notsleep.yaml -n pf
+
+kubectl apply -f istio-1.20.1/samples/addons
+
+istio-1.20.1/bin/istioctl dashboard kiali
+
+Test:
+for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep "reviews-"; done
+-> Serve only version v1 [DR is applied]
+
+------------------------------------------------------------
+
+
+
+==================== Deploy Ambient with Ingressgateway ====================
+- ztunnel
+- istio cni
+- waypoint
+
+------------------------------------------------------------
+
+istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient -d istio-1.20.1/manifests/ -y
+k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
+
+<Test>
+
+kubectl label namespace pf istio.io/dataplane-mode=ambient istio-injection-
+kubectl get namespace -L istio.io/dataplane-mode
+k rollout restart deployment details-v1 notsleep productpage-v1 ratings-v1 reviews-v1 reviews-v2 reviews-v3 sleep -n pf
+
+<Test> - #1 should not work because there is no waypoint
+
+L4 Auth Policy:
+k apply -f src/l4-auth.yaml
+
+<Test #2-#4>
+
+k delete -f src/l4-auth.yaml
+
+kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
+  { kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=v1.0.0" | kubectl apply -f -; }
+
+k apply -f src/waypoint.yaml
+# add vs with fault injection test case
+
+<Test #1>
+
+L7 Auth Policy:
+k apply -f src/l7-auth.yaml
+
+Test:
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" -X DELETE
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+
+
+k delete -f src/l7-auth.yaml
+
+Test:
+for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep "reviews-"; done
+kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep -o "<title>.*</title>"
+kubectl exec deploy/sleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+------------------------------------------------------------
+
+
+
+===== Replace Ingressgateway with K8s Gateway API =====
+- httproutes
+
+------------------------------------------------------------
+istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient-gateway-api -d istio-1.20.1/manifests/ -y
+kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/bookinfo-gateway.yaml -n pf
+k patch services bookinfo-gateway-istio -n pf --patch-file src/gateway-api-patch.yaml
+
+kubectl delete -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
+kubectl delete -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
+kubectl delete -f istio-1.20.1/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
+
+kubectl apply -f istio-1.20.1/samples/bookinfo/platform/kube/bookinfo-versions.yaml -n pf
+kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/route-all-v1.yaml -n pf
+
+Test:
+for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://bookinfo-gateway-istio.pf/productpage" | grep "reviews-"; done
+for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep "reviews-"; done
+------------------------------------------------------------
+
+
+
+===== Destroy =====
+
+kind delete cluster --name ambient
+
+
+
+
+===== Observations =====
+
+1) mtls L4 Function (Service-to-Service communication)
+exec sleep -> curl -s http://productpage:9080/ | grep -o "<title>.*</title>"
+log ztunnel same node
+
+2) 
+k debug -it -n istio-system ztunnel-v84rn --image=nicolaka/netshoot --image-pull-policy=Always
+termshark -i eth0
