@@ -29,7 +29,7 @@ for i in $(seq 1 30); do curl -s localhost/hello; done
 [Observe: Serve only version v1 [FAIL: Because no sidecar (DR is not working)]]
 
 
-istioctl dashboard kiali
+istio-1.20.1/bin/istioctl dashboard kiali
 
 
 kubectl get namespace -L istio-injection
