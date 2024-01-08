@@ -1,6 +1,6 @@
 ==================== Initial Setup ====================
-- sidecar apps
-- ingressgateway
+- sidecar apps (envoy [1]; destinationrules)
+- istio ingressgateway (load balancer that handles incoming HTTP and HTTPS traffic to the mesh; gateway and virtualservice)
 
 ------------------------------------------------------------
 
@@ -33,9 +33,9 @@ for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://isti
 
 
 ==================== Deploy Ambient with Ingressgateway ====================
-- ztunnel
+- ztunnel [2]
+- waypoint [3]
 - istio cni
-- waypoint
 
 ------------------------------------------------------------
 
@@ -86,7 +86,7 @@ kubectl exec deploy/notsleep -n pf -- curl -s http://productpage:9080/ | grep -o
 
 
 ===== Replace Ingressgateway with K8s Gateway API =====
-- httproutes
+- httproutes [4]
 
 ------------------------------------------------------------
 istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient-gateway-api -d istio-1.20.1/manifests/ -y
@@ -123,3 +123,27 @@ log ztunnel same node
 2) 
 k debug -it -n istio-system ztunnel-v84rn --image=nicolaka/netshoot --image-pull-policy=Always
 termshark -i eth0
+
+
+================================================================================================================================
+
+References:
+[1] https://istio.io/latest/docs/ops/deployment/architecture/#envoy
+
+[2] ztunnel - https://istio.io/latest/docs/ops/ambient/usage/ztunnel/
+- ztunnel proxy uses xDS APIs to communicate with the Istio control plane (istiod)
+- also obtains mTLS certificates for the Service Accounts of all pods that are scheduled on its Kubernetes node using xDS
+- implements L4 data plane functionality
+- HBONE tunnel is used to service-service communication across different nodes (HBONE (for HTTP Based Overlay Network Encapsulation) is used in Istio ambient to refer to a technique for transparently and securely tunneling TCP packets encapsulated within HTTPS packets)
+- SPIFFE identities are used to identify the workloads on each side of the connection
+- HBONE tunnel runs on TCP port 15008
+- https://istio.io/latest/docs/ops/ambient/architecture/ 
+- https://istio.io/latest/blog/2023/traffic-for-ambient-and-sidecar/
+
+[3] waypoint - https://istio.io/latest/blog/2023/waypoint-proxy-made-simple/
+- Layer 7 processing layer
+- A waypoint refers to the HTTP proxy component of ambient data plane mode. 
+- A waypoint runs on a per-namespace or per-service account basis and handles all traffic entering that namespace.
+
+[4] gateway api - https://gateway-api.sigs.k8s.io/
+- https://istio.io/latest/blog/2022/getting-started-gtwapi/
