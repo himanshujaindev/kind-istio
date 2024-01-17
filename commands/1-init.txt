@@ -32,3 +32,8 @@ docker ps
 docker exec -it c04633be10fd /bin/sh
 
 Use kubectl commands ...
+
+Update the skin:
+k9dir
+vi config.yml
+skin: snazzy

@@ -28,6 +28,8 @@ Test:
 for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://istio-ingressgateway.istio-system/productpage" | grep "reviews-"; done
 -> Serve only version v1 [DR is applied]
 
+for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s productpage.pf:9080/productpage | grep "reviews-"; done
+-> Service to service communication
 ------------------------------------------------------------
 
 
@@ -114,6 +116,9 @@ for i in $(seq 1 30); do kubectl exec deploy/sleep -n pf -- curl -s "http://isti
 kind delete cluster --name ambient
 
 
+===== TODO =====
+1) ambient pod annotation similar to sidecar
+2) traffic flow in detail
 
 
 ===== Observations =====
@@ -125,6 +130,9 @@ log ztunnel same node
 2) 
 k debug -it -n istio-system ztunnel-v84rn --image=nicolaka/netshoot --image-pull-policy=Always
 termshark -i eth0
+
+3) mtls
+kubectl exec $(kubectl get pod -l app=sleep -n pf -o jsonpath={.items..metadata.name}) -c istio-proxy -n pf -- ls /etc/certs
 
 
 ================================================================================================================================
@@ -141,6 +149,7 @@ References:
 - HBONE tunnel runs on TCP port 15008
 - https://istio.io/latest/docs/ops/ambient/architecture/ 
 - https://istio.io/latest/blog/2023/traffic-for-ambient-and-sidecar/
+- https://www.alibabacloud.com/blog/depth-analysis-of-istio-ambient-mesh-traffic-path_600643
 
 [3] waypoint - https://istio.io/latest/blog/2023/waypoint-proxy-made-simple/
 - Layer 7 processing layer

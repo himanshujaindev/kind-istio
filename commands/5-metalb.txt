@@ -1,0 +1,52 @@
+===== K8s Ingress LB ======
+
+brew install chipmk/tap/docker-mac-net-connect
+sudo brew services start chipmk/tap/docker-mac-net-connect
+
+### ONLY docker-mac-net-connect should be running
+❯ brew services list
+Name                   Status User File
+colima                 none
+docker-mac-net-connect none   root
+docker-machine         none
+jenkins-lts            none
+kafka                  none
+nginx                  none
+php                    none
+prometheus             none
+unbound                none
+vault                  none
+zookeeper              none
+
+### Verify the working
+docker run --rm --name nginx -d nginx
+docker inspect nginx --format '{{.NetworkSettings.IPAddress}}'
+curl -I 172.17.0.2
+docker stop nginx
+
+
+kind create cluster --config src/metalb/kind-config.yaml
+k apply -f src/init.yaml
+k9s --context kind-kind
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl apply -f src/metalb/ingress-service.yaml
+curl localhost/foo/hostname
+curl localhost/bar/hostname
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl apply -f src/metalb/metallb-config.yaml
+kubectl apply -f src/metalb/lb-service.yaml
+curl localhost/foo-bar/hostname
+LB_IP=`kubectl get svc foo-bar-service -n pf -o json | jq ".status.loadBalancer.ingress[].ip" | tr -d '"'`
+for i in $(seq 1 30); do curl $LB_IP/hostname; echo ""; done
+
+kind delete cluster --name kind
+
+================================================================================================================================
+
+References:
+https://github.com/chipmk/docker-mac-net-connect
+https://gist.github.com/maucaro/935e4dfa1738e1810d86a82b7cc1a45f
+https://kind.sigs.k8s.io/docs/user/loadbalancer/
+https://medium.com/groupon-eng/loadbalancer-services-using-kubernetes-in-docker-kind-694b4207575d
