@@ -1,21 +1,21 @@
 ===== Istio Sidecar Setup =====
 
-istio-1.20.1/bin/istioctl install --set profile=himajai2-demo -d istio-1.20.1/manifests/ -y
+istio-1.22.0/bin/istioctl install --set profile=himajai2-demo -d istio-1.22.0/manifests/ -y
 k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
 
-kubectl apply -f istio-1.20.1/samples/bookinfo/platform/kube/bookinfo.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/bookinfo/networking/destination-rule-all.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/bookinfo/platform/kube/bookinfo.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/bookinfo/networking/bookinfo-gateway.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/bookinfo/networking/destination-rule-all.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/bookinfo/networking/virtual-service-all-v1.yaml -n pf
 
-kubectl apply -f istio-1.20.1/samples/sleep/sleep.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/sleep/notsleep.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/sleep/sleep.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/sleep/notsleep.yaml -n pf
 
-kubectl apply -f istio-1.20.1/samples/helloworld/helloworld.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/helloworld/helloworld-gateway.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/helloworld/helloworld.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/helloworld/helloworld-gateway.yaml -n pf
 kubectl apply -f src/hellowworld-gateway-dr.yaml -n pf
 
-kubectl apply -f istio-1.20.1/samples/addons
+kubectl apply -f istio-1.22.0/samples/addons
 
 Test:
 kubectl exec "$(kubectl get pod -l app=ratings -n pf -o jsonpath='{.items[0].metadata.name}')" -n pf -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
@@ -29,7 +29,7 @@ for i in $(seq 1 30); do curl -s localhost/hello; done
 [Observe: Serve only version v1 [FAIL: Because no sidecar (DR is not working)]]
 
 
-istio-1.20.1/bin/istioctl dashboard kiali
+istio-1.22.0/bin/istioctl dashboard kiali
 
 
 kubectl get namespace -L istio-injection
@@ -54,4 +54,4 @@ References:
 1. https://istio.io/latest/docs/examples/bookinfo
 
 Useful Commands:
-$ istio-1.20.1/bin/istioctl analyze -A
+$ istio-1.22.0/bin/istioctl analyze -A

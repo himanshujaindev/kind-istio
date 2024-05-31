@@ -1,6 +1,6 @@
 ===== Ambient Mode with Ingressgateway ======
 
-istio-1.20.1/bin/istioctl install --set profile=himajai2-ambient -d istio-1.20.1/manifests/ -y
+istio-1.22.0/bin/istioctl install --set profile=himajai2-ambient -d istio-1.22.0/manifests/ -y
 k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
 
 Test:
@@ -60,10 +60,10 @@ k delete -f src/l7-auth.yaml
 ================================================================================================================================
 
 Useful Commands:
-istio-1.20.1/bin/istioctl proxy-config listener deploy/bookinfo-productpage-istio-waypoint -n pf --waypoint
-istio-1.20.1/bin/istioctl proxy-config clusters deploy/bookinfo-productpage-istio-waypoint -n pf
-istio-1.20.1/bin/istioctl proxy-config routes deploy/bookinfo-productpage-istio-waypoint -n pf
-istio-1.20.1/bin/istioctl proxy-config endpoints deploy/bookinfo-productpage-istio-waypoint -n pf
+istio-1.22.0/bin/istioctl proxy-config listener deploy/bookinfo-productpage-istio-waypoint -n pf --waypoint
+istio-1.22.0/bin/istioctl proxy-config clusters deploy/bookinfo-productpage-istio-waypoint -n pf
+istio-1.22.0/bin/istioctl proxy-config routes deploy/bookinfo-productpage-istio-waypoint -n pf
+istio-1.22.0/bin/istioctl proxy-config endpoints deploy/bookinfo-productpage-istio-waypoint -n pf
 
 References:
 https://istio.io/latest/docs/ops/ambient/getting-started/
@@ -74,19 +74,19 @@ https://istio.io/latest/docs/ops/ambient/getting-started/
 
 k patch services bookinfo-gateway-istio -n pf --patch-file gateway-api-patch.yaml
 
-kubectl apply -f istio-1.20.1/samples/bookinfo/gateway-api/bookinfo-gateway.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/bookinfo/gateway-api/bookinfo-gateway.yaml -n pf
 
 
-kubectl delete -f istio-1.20.1/samples/helloworld/helloworld-gateway.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-gateway.yaml -n pf
+kubectl delete -f istio-1.22.0/samples/helloworld/helloworld-gateway.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/helloworld/gateway-api/helloworld-gateway.yaml -n pf
 k patch services helloworld-gateway-istio -n pf --patch-file gateway-api-patch.yaml
 
 for i in $(seq 1 30); do curl localhost/hello; done
 
 
 
-kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-route.yaml -n pf
-kubectl apply -f istio-1.20.1/samples/helloworld/gateway-api/helloworld-versions.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/helloworld/gateway-api/helloworld-route.yaml -n pf
+kubectl apply -f istio-1.22.0/samples/helloworld/gateway-api/helloworld-versions.yaml -n pf
 
 
 for i in $(seq 1 30); do curl localhost/hello; done

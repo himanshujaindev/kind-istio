@@ -1,9 +1,8 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
+metadata:
+  namespace: istio-system
 spec:
-  meshConfig:
-    accessLogFile: /dev/stdout
-
   components:
     egressGateways:
     - name: istio-egressgateway
