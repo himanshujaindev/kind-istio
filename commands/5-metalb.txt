@@ -1,5 +1,7 @@
 ===== K8s Ingress LB ======
 
+STOP VPN
+
 brew install chipmk/tap/docker-mac-net-connect
 sudo brew services start chipmk/tap/docker-mac-net-connect
 
@@ -50,3 +52,4 @@ https://github.com/chipmk/docker-mac-net-connect
 https://gist.github.com/maucaro/935e4dfa1738e1810d86a82b7cc1a45f
 https://kind.sigs.k8s.io/docs/user/loadbalancer/
 https://medium.com/groupon-eng/loadbalancer-services-using-kubernetes-in-docker-kind-694b4207575d
+https://metallb.universe.tf

@@ -9,7 +9,7 @@ k apply -f src/init.yaml
 k9s --context kind-ambient
 
 istio-1.20.1/bin/istioctl install --set profile=himajai2-demo -d istio-1.20.1/manifests/ -y
-k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml
+k patch services istio-ingressgateway -n istio-system --patch-file src/gateway-patch.yaml -> dont run this, if installing metalb
 kubectl label namespace pf istio-injection=enabled
 
 kubectl apply -f istio-1.20.1/samples/bookinfo/platform/kube/bookinfo.yaml -n pf
