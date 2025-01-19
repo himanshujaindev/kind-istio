@@ -123,3 +123,5 @@ istio-1.23.3/bin/istioctl dashboard prometheus
 
 
 https://istio.io/latest/docs/ambient/
+https://pages.solo.io/rs/132-VJP-402/images/Migrating_from_Sidecars_to_Sidecarless_Ambient_Mesh-Whitepaper.pdf
+https://ambientmesh.io/
